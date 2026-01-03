@@ -46,6 +46,7 @@ dependencies {
     implementation(project(":type.murdermysterylobby"))
     implementation(project(":type.murdermysterygame"))
     implementation(project(":type.murdermysteryconfigurator"))
+    implementation(project(":type.buildbattlelobby"))
     implementation(project(":type.generic"))
     implementation(project(":commons"))
     implementation(project(":proxy.api"))

@@ -15,6 +15,7 @@ public enum CustomWorlds {
 	SKYBLOCK_JERRYS_WORKSHOP("hypixel_skyblock_jerrys_workshop"),
 	SKYBLOCK_DUNGEON_HUB("hypixel_skyblock_dungeon_hub"),
 	PROTOTYPE_LOBBY("hypixel_prototype_lobby"),
+	BUILD_BATTLE_LOBBY("hypixel_build_battle_lobby"),
 	BEDWARS_LOBBY("hypixel_bedwars_lobby"),
 	MURDER_MYSTERY_LOBBY("hypixel_murder_mystery_lobby"),
 	;

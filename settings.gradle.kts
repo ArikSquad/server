@@ -35,6 +35,8 @@ include(":type.bedwarsconfigurator")
 include(":type.murdermysterylobby")
 include(":type.murdermysterygame")
 include(":type.murdermysteryconfigurator")
+include(":type.buildbattlelobby")
+include(":type.buildbattlegame")
 
 include(":service.auctionhouse")
 include(":service.bazaar")
