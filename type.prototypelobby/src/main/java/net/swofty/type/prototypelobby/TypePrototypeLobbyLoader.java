@@ -94,11 +94,11 @@ public class TypePrototypeLobbyLoader implements LobbyTypeLoader {
     @Override
     public Map<Integer, LobbyItem> getHotbarItems() {
         return Map.of(
-                0, new PlayCompass(),
-                1, new ProfileItem(),
+            0, new PlayCompass(),
+            1, new ProfileItem(),
             4, new Collectibles(),
-                7, new HidePlayers(),
-                8, new LobbySelector()
+            7, new HidePlayers(),
+            8, new LobbySelector()
         );
     }
 
@@ -113,10 +113,10 @@ public class TypePrototypeLobbyLoader implements LobbyTypeLoader {
             @Override
             public List<TablistModule> getModules() {
                 return List.of(
-                        new EmptyTabModule(),
-                        new EmptyTabModule(),
-                        new EmptyTabModule(),
-                        new EmptyTabModule()
+                    new EmptyTabModule(),
+                    new EmptyTabModule(),
+                    new EmptyTabModule(),
+                    new EmptyTabModule()
                 );
             }
         };
@@ -125,16 +125,16 @@ public class TypePrototypeLobbyLoader implements LobbyTypeLoader {
     @Override
     public LoaderValues getLoaderValues() {
         return new LoaderValues(
-                (type) -> spawnPoint,
-                false
+            (_) -> spawnPoint,
+            false
         );
     }
 
     @Override
     public List<HypixelEventClass> getTraditionalEvents() {
         List<HypixelEventClass> events = new ArrayList<>(HypixelGenericLoader.loopThroughPackage(
-                "net.swofty.type.prototypelobby.events",
-                HypixelEventClass.class
+            "net.swofty.type.prototypelobby.events",
+            HypixelEventClass.class
         ).toList());
         // Add lobby base events
         events.add(new LobbyItemEvents());
@@ -150,24 +150,24 @@ public class TypePrototypeLobbyLoader implements LobbyTypeLoader {
     @Override
     public List<HypixelEventClass> getCustomEvents() {
         return HypixelGenericLoader.loopThroughPackage(
-                "net.swofty.type.prototypelobby.events.custom",
-                HypixelEventClass.class
+            "net.swofty.type.prototypelobby.events.custom",
+            HypixelEventClass.class
         ).toList();
     }
 
     @Override
     public List<HypixelNPC> getNPCs() {
         return HypixelGenericLoader.loopThroughPackage(
-                "net.swofty.type.prototypelobby.npcs",
-                HypixelNPC.class
+            "net.swofty.type.prototypelobby.npcs",
+            HypixelNPC.class
         ).toList();
     }
 
     @Override
     public List<ServiceToClient> getServiceRedisListeners() {
         return HypixelGenericLoader.loopThroughPackage(
-                "net.swofty.type.prototypelobby.redis.service",
-                ServiceToClient.class
+            "net.swofty.type.prototypelobby.redis.service",
+            ServiceToClient.class
         ).toList();
     }
 
