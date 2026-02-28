@@ -166,6 +166,8 @@ public class TypeBedWarsLobbyLoader implements LobbyTypeLoader {
         events.add(new LobbyParkourEvents());
         events.add(new LobbyLaunchPadEvents());
         events.add(new LobbyPlayerJoinEvents());
+        events.add(new LobbyPetEvents());
+        events.add(new LobbyMorphEvents());
         events.add(new LobbyBlockBreak());
         events.add(new LobbyPlayerMove(spawnPoint));
         return events;

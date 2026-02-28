@@ -257,7 +257,11 @@ public class HypixelDataHandler extends DataHandler {
 
         FRIEND_SORT("friend_sort", DatapointFriendSort.class,
                 new DatapointFriendSort("friend_sort",
-                        new DatapointFriendSort.FriendSortData(DatapointFriendSort.SortType.DEFAULT, false)))
+                    new DatapointFriendSort.FriendSortData(DatapointFriendSort.SortType.DEFAULT, false))),
+
+        PET_DATA("pet_data", DatapointPetData.class, new DatapointPetData("pet_data")),
+
+        COSMETIC_DATA("cosmetic_data", DatapointCosmeticData.class, new DatapointCosmeticData("cosmetic_data"))
         ;
 
         @Getter private final String key;
