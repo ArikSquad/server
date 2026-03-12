@@ -19,7 +19,7 @@ public final class NPCAnimalEntityImpl extends AbstractNPCEntityImpl<AnimalConfi
             String[] holograms,
             boolean overflowing
     ) {
-        super(npc, viewer, entityType, pos, bottomDisplay, config, holograms, true, config.hologramYOffset());
+        super(npc, viewer, entityType, pos, bottomDisplay, config, holograms, true, true, config.hologramYOffset());
     }
 
     @Override

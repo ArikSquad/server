@@ -4,7 +4,7 @@ import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.EntityPose;
 import net.minestom.server.instance.Instance;
 import net.swofty.type.generic.HypixelConst;
-import net.swofty.type.generic.entity.npc.runtime.NPCLoadout;
+import net.swofty.type.generic.entity.npc.behavior.NPCLoadout;
 import net.swofty.type.generic.user.HypixelPlayer;
 import org.jetbrains.annotations.Nullable;
 
@@ -43,11 +43,11 @@ public interface NPCConfiguration {
         return NPCLoadout.EMPTY;
     }
 
-    default boolean supportsRuntimeBehavior() {
+    default boolean supportsBehavior() {
         return false;
     }
 
-    default Pos runtimeSpawnPosition() {
+    default Pos behaviorStartPosition() {
         return Pos.ZERO;
     }
 }

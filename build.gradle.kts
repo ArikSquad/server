@@ -8,6 +8,14 @@ plugins {
 group = "net.swofty"
 version = "1.0"
 
+repositories {
+    mavenCentral()
+    mavenLocal()
+    maven("https://repo.viaversion.com")
+    maven("https://jitpack.io")
+    maven("https://repo.lucko.me/")
+}
+
 subprojects {
     apply(plugin = "java")
     apply(plugin = "java-library")
@@ -29,6 +37,7 @@ subprojects {
 
     dependencies {
         testImplementation("org.junit.jupiter:junit-jupiter:6.0.3")
+        testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.0.3")
 
         implementation("org.reflections:reflections:0.10.2")
         implementation("org.json:json:20251224")

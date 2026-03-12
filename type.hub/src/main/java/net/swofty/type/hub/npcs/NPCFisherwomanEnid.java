@@ -1,7 +1,10 @@
 package net.swofty.type.hub.npcs;
 
 import net.minestom.server.coordinate.Pos;
+import net.minestom.server.item.ItemStack;
+import net.minestom.server.item.Material;
 import net.swofty.type.generic.entity.npc.HypixelNPC;
+import net.swofty.type.generic.entity.npc.behavior.NPCLoadout;
 import net.swofty.type.generic.entity.npc.configuration.HumanConfiguration;
 import net.swofty.type.generic.event.custom.NPCInteractEvent;
 import net.swofty.type.generic.user.HypixelPlayer;
@@ -34,6 +37,13 @@ public class NPCFisherwomanEnid extends HypixelNPC {
             public boolean looking(HypixelPlayer player) {
                 return true;
             }
+
+            @Override
+            public NPCLoadout loadout(HypixelPlayer player) {
+                return new NPCLoadout(ItemStack.of(Material.FISHING_ROD), ItemStack.AIR, ItemStack.AIR, ItemStack.AIR, ItemStack.AIR, ItemStack.AIR);
+            }
+
+
         });
     }
 

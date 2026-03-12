@@ -12,10 +12,10 @@ import net.minestom.server.network.packet.server.play.EntityAnimationPacket;
 import net.minestom.server.network.packet.server.play.EntityEquipmentPacket;
 import net.swofty.type.generic.entity.hologram.PlayerHolograms;
 import net.swofty.type.generic.entity.npc.HypixelNPC;
+import net.swofty.type.generic.entity.npc.behavior.NPCAnimation;
+import net.swofty.type.generic.entity.npc.behavior.NPCBehaviorState;
+import net.swofty.type.generic.entity.npc.behavior.NPCLoadout;
 import net.swofty.type.generic.entity.npc.configuration.NPCConfiguration;
-import net.swofty.type.generic.entity.npc.runtime.NPCControllerSnapshot;
-import net.swofty.type.generic.entity.npc.runtime.NPCLoadout;
-import net.swofty.type.generic.entity.npc.runtime.NPCVisualPulse;
 import net.swofty.type.generic.user.HypixelPlayer;
 import org.jetbrains.annotations.NotNull;
 
@@ -42,6 +42,7 @@ public abstract class AbstractNPCEntityImpl<C extends NPCConfiguration> extends 
             @NotNull String bottomDisplay,
             @NotNull C config,
             @NotNull String[] holograms,
+            boolean useEntityCustomName,
             boolean splitBottomLine,
             float baseHologramOffset
     ) {
@@ -53,8 +54,12 @@ public abstract class AbstractNPCEntityImpl<C extends NPCConfiguration> extends 
 
         setAutoViewable(false);
         setNoGravity(true);
-        set(DataComponents.CUSTOM_NAME, Component.text(bottomDisplay));
-        setCustomNameVisible(!splitBottomLine);
+        if (useEntityCustomName) {
+            set(DataComponents.CUSTOM_NAME, Component.text(bottomDisplay));
+            setCustomNameVisible(!splitBottomLine);
+        } else {
+            setCustomNameVisible(false);
+        }
 
         this.holo = PlayerHolograms.ExternalPlayerHologram.builder()
                 .pos(pos.add(0, baseHologramOffset, 0))
@@ -82,7 +87,7 @@ public abstract class AbstractNPCEntityImpl<C extends NPCConfiguration> extends 
     public void updateNewViewer(@NotNull Player player) {
         super.updateNewViewer(player);
         syncPresentation();
-        syncRuntime(npc.runtimeSnapshot());
+        syncBehavior(npc.behaviorState());
         player.sendPacket(new EntityEquipmentPacket(getEntityId(), lastLoadout.asEquipmentMap()));
     }
 
@@ -130,27 +135,27 @@ public abstract class AbstractNPCEntityImpl<C extends NPCConfiguration> extends 
     }
 
     @Override
-    public void syncRuntime(NPCControllerSnapshot snapshot) {
-        Pos targetPosition = snapshot != null ? snapshot.renderedPosition() : npc.currentPosition(viewer);
+    public void syncBehavior(NPCBehaviorState state) {
+        Pos targetPosition = state != null ? state.renderedPosition() : npc.currentPosition(viewer);
         if (!getPosition().samePoint(targetPosition)) {
             refreshPosition(targetPosition);
         }
 
-        float yawOffset = snapshot == null ? 0 : snapshot.headYawOffset();
+        float yawOffset = state == null ? 0 : state.headYawOffset();
         setView(targetPosition.yaw() + yawOffset, targetPosition.pitch());
 
-        NPCLoadout loadout = snapshot != null && !snapshot.loadout().isEmpty()
-                ? snapshot.loadout()
+        NPCLoadout loadout = state != null && !state.loadout().isEmpty()
+            ? state.loadout()
                 : config.loadout(viewer);
         applyLoadout(loadout);
 
-        if (snapshot != null) {
-            for (NPCVisualPulse pulse : snapshot.pulses()) {
-                EntityAnimationPacket.Animation animation = switch (pulse.type()) {
+        if (state != null) {
+            for (NPCAnimation animation : state.animations()) {
+                EntityAnimationPacket.Animation packetAnimation = switch (animation.type()) {
                     case SWING_MAIN_HAND -> EntityAnimationPacket.Animation.SWING_MAIN_ARM;
                     case SWING_OFF_HAND -> EntityAnimationPacket.Animation.SWING_OFF_HAND;
                 };
-                viewer.sendPacket(new EntityAnimationPacket(getEntityId(), animation));
+                viewer.sendPacket(new EntityAnimationPacket(getEntityId(), packetAnimation));
             }
         }
     }
@@ -180,7 +185,7 @@ public abstract class AbstractNPCEntityImpl<C extends NPCConfiguration> extends 
 
     protected float hologramBaseOffset(String[] sourceHolograms) {
         boolean overflowing = sourceHolograms[sourceHolograms.length - 1].length() > 16;
-        return getEyeHeight() + additionalHologramOffset() + (overflowing ? -0.2f : 0f);
+        return (float) (getEyeHeight() + additionalHologramOffset() + (overflowing ? -0.2f : 0f));
     }
 
     protected boolean shouldSplitBottomLine() {

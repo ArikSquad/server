@@ -27,7 +27,7 @@ public final class NPCEntityImpl extends AbstractNPCEntityImpl<HumanConfiguratio
             HumanConfiguration config,
             boolean overflowing
     ) {
-        super(npc, viewer, EntityType.MANNEQUIN, pos, bottomDisplay, config, holograms, false, 1.9f);
+        super(npc, viewer, EntityType.MANNEQUIN, pos, bottomDisplay, config, holograms, false, false, 1.9f);
         this.skinTexture = skinTexture;
         this.skinSignature = skinSignature;
 
@@ -35,7 +35,6 @@ public final class NPCEntityImpl extends AbstractNPCEntityImpl<HumanConfiguratio
             meta.setImmovable(true);
             meta.setProfile(new ResolvableProfile(new PlayerSkin(skinTexture, skinSignature)));
         });
-        setCustomNameVisible(false);
     }
 
     @Override

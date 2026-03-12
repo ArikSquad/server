@@ -1,4 +1,4 @@
-package net.swofty.type.generic.entity.npc.runtime;
+package net.swofty.type.generic.entity.npc.behavior;
 
 import net.minestom.server.entity.EquipmentSlot;
 import net.minestom.server.item.ItemStack;
@@ -7,20 +7,20 @@ import java.util.EnumMap;
 import java.util.Map;
 
 public record NPCLoadout(
-        ItemStack mainHand,
-        ItemStack offHand,
-        ItemStack helmet,
-        ItemStack chestplate,
-        ItemStack leggings,
-        ItemStack boots
+    ItemStack mainHand,
+    ItemStack offHand,
+    ItemStack helmet,
+    ItemStack chestplate,
+    ItemStack leggings,
+    ItemStack boots
 ) {
     public static final NPCLoadout EMPTY = new NPCLoadout(
-            ItemStack.AIR,
-            ItemStack.AIR,
-            ItemStack.AIR,
-            ItemStack.AIR,
-            ItemStack.AIR,
-            ItemStack.AIR
+        ItemStack.AIR,
+        ItemStack.AIR,
+        ItemStack.AIR,
+        ItemStack.AIR,
+        ItemStack.AIR,
+        ItemStack.AIR
     );
 
     public NPCLoadout {
@@ -49,6 +49,6 @@ public record NPCLoadout(
 
     public boolean isEmpty() {
         return mainHand.isAir() && offHand.isAir() && helmet.isAir() && chestplate.isAir()
-                && leggings.isAir() && boots.isAir();
+            && leggings.isAir() && boots.isAir();
     }
 }

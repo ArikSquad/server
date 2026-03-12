@@ -22,7 +22,7 @@ public final class NPCVillagerEntityImpl extends AbstractNPCEntityImpl<VillagerC
             String[] holograms,
             boolean overflowing
     ) {
-        super(npc, viewer, EntityType.VILLAGER, pos, bottomDisplay, config, holograms, true, 0.5f);
+        super(npc, viewer, EntityType.VILLAGER, pos, bottomDisplay, config, holograms, true, true, 0.5f);
         VillagerMeta meta = (VillagerMeta) this.entityMeta;
         meta.setVillagerData(new VillagerMeta.VillagerData(VillagerType.PLAINS, profession, VillagerMeta.Level.EXPERT));
     }

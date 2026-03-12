@@ -7,13 +7,13 @@ import net.kyori.adventure.sound.Sound;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.GameMode;
+import net.swofty.type.generic.entity.npc.behavior.NPCBehavior;
+import net.swofty.type.generic.entity.npc.behavior.NPCBehaviorController;
+import net.swofty.type.generic.entity.npc.behavior.NPCBehaviorState;
 import net.swofty.type.generic.entity.npc.configuration.AnimalConfiguration;
 import net.swofty.type.generic.entity.npc.configuration.HumanConfiguration;
 import net.swofty.type.generic.entity.npc.configuration.NPCConfiguration;
 import net.swofty.type.generic.entity.npc.configuration.VillagerConfiguration;
-import net.swofty.type.generic.entity.npc.runtime.NPCBehaviorSpec;
-import net.swofty.type.generic.entity.npc.runtime.NPCController;
-import net.swofty.type.generic.entity.npc.runtime.NPCControllerSnapshot;
 import net.swofty.type.generic.entity.npc.impl.NPCAnimalEntityImpl;
 import net.swofty.type.generic.entity.npc.impl.NPCEntityImpl;
 import net.swofty.type.generic.entity.npc.impl.NPCViewable;
@@ -43,7 +43,7 @@ public abstract class HypixelNPC {
     @Getter
     private final NPCConfiguration parameters;
     private final DialogueController dialogueController;
-    private NPCController controller;
+    private NPCBehaviorController behaviorController;
     @Getter
     private final String name;
 
@@ -156,15 +156,15 @@ public abstract class HypixelNPC {
                     Logger.error("Entity for NPC {} does not implement NPCViewable, skipping update", npc.getName());
                     return;
                 }
-                NPCControllerSnapshot snapshot = npc.runtimeSnapshot();
+                NPCBehaviorState state = npc.behaviorState();
                 npcViewable.syncPresentation();
-                npcViewable.syncRuntime(snapshot);
+                npcViewable.syncBehavior(state);
                 npcPosition = npc.currentPosition(player);
 
                 Pos playerPosition = player.getPosition();
                 double entityDistance = playerPosition.distance(npcPosition);
                 boolean isLookingNPC = config.looking(player) && player.getGameMode() != GameMode.SPECTATOR
-                        && (snapshot == null || !snapshot.headLocked());
+                    && (state == null || !state.blocksAutoLook());
 
                 // Get inRangeOf list based on entity type
                 List<HypixelPlayer> inRange = npcViewable.getInRangeOf();
@@ -179,14 +179,14 @@ public abstract class HypixelNPC {
                             entity.lookAt(player);
                         } else {
                             // over the distance, reset back to default rotation
-                            entity.setView(npcPosition.yaw() + (snapshot == null ? 0 : snapshot.headYawOffset()), npcPosition.pitch());
+                            entity.setView(npcPosition.yaw() + (state == null ? 0 : state.headYawOffset()), npcPosition.pitch());
                         }
                     }
                 } else {
                     if (inRange.contains(player)) {
                         inRange.remove(player);
                         entity.updateOldViewer(player);
-                        entity.setView(npcPosition.yaw() + (snapshot == null ? 0 : snapshot.headYawOffset()), npcPosition.pitch());
+                        entity.setView(npcPosition.yaw() + (state == null ? 0 : state.headYawOffset()), npcPosition.pitch());
                     }
                 }
             });
@@ -197,13 +197,13 @@ public abstract class HypixelNPC {
 
     public void register() {
         registeredNPCs.add(this);
-        controller().register();
+        behaviorController().register();
     }
 
     public void unregister() {
         registeredNPCs.remove(this);
-        if (controller != null) {
-            controller.unregister();
+        if (behaviorController != null) {
+            behaviorController.unregister();
         }
     }
 
@@ -220,24 +220,24 @@ public abstract class HypixelNPC {
         return dialogueController;
     }
 
-    public NPCController controller() {
-        if (controller == null) {
-            controller = new NPCController(this, parameters, behavior());
+    public NPCBehaviorController behaviorController() {
+        if (behaviorController == null) {
+            behaviorController = new NPCBehaviorController(parameters, behavior());
         }
-        return controller;
+        return behaviorController;
     }
 
-    public NPCControllerSnapshot runtimeSnapshot() {
-        return parameters.supportsRuntimeBehavior() ? controller().snapshot() : null;
+    public NPCBehaviorState behaviorState() {
+        return parameters.supportsBehavior() ? behaviorController().state() : null;
     }
 
     public Pos currentPosition(HypixelPlayer player) {
-        NPCControllerSnapshot snapshot = runtimeSnapshot();
-        return snapshot != null ? snapshot.renderedPosition() : parameters.position(player);
+        NPCBehaviorState state = behaviorState();
+        return state != null ? state.renderedPosition() : parameters.position(player);
     }
 
-    protected NPCBehaviorSpec behavior() {
-        return NPCBehaviorSpec.none();
+    protected NPCBehavior behavior() {
+        return NPCBehavior.none();
     }
 
     /**

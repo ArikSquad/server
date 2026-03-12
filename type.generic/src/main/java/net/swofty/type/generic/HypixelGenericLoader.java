@@ -39,7 +39,7 @@ import net.swofty.type.generic.data.mongodb.BedWarsStatsDatabase;
 import net.swofty.type.generic.data.mongodb.ProfilesDatabase;
 import net.swofty.type.generic.data.mongodb.UserDatabase;
 import net.swofty.type.generic.entity.npc.HypixelNPC;
-import net.swofty.type.generic.entity.npc.runtime.NPCRuntimeService;
+import net.swofty.type.generic.entity.npc.behavior.NPCBehaviorService;
 import net.swofty.type.generic.event.HypixelEventClass;
 import net.swofty.type.generic.event.HypixelEventHandler;
 import net.swofty.type.generic.leaderboard.LeaderboardService;
@@ -229,7 +229,7 @@ public record HypixelGenericLoader(HypixelTypeLoader loader) {
         }, TaskSchedule.tick(2), TaskSchedule.tick(2));
 
         MinecraftServer.getSchedulerManager().scheduleTask(
-                NPCRuntimeService::tick,
+            NPCBehaviorService::tick,
                 TaskSchedule.tick(1),
                 TaskSchedule.tick(1)
         );
