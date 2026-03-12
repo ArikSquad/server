@@ -11,6 +11,9 @@ import net.swofty.type.generic.entity.npc.configuration.AnimalConfiguration;
 import net.swofty.type.generic.entity.npc.configuration.HumanConfiguration;
 import net.swofty.type.generic.entity.npc.configuration.NPCConfiguration;
 import net.swofty.type.generic.entity.npc.configuration.VillagerConfiguration;
+import net.swofty.type.generic.entity.npc.runtime.NPCBehaviorSpec;
+import net.swofty.type.generic.entity.npc.runtime.NPCController;
+import net.swofty.type.generic.entity.npc.runtime.NPCControllerSnapshot;
 import net.swofty.type.generic.entity.npc.impl.NPCAnimalEntityImpl;
 import net.swofty.type.generic.entity.npc.impl.NPCEntityImpl;
 import net.swofty.type.generic.entity.npc.impl.NPCViewable;
@@ -40,6 +43,7 @@ public abstract class HypixelNPC {
     @Getter
     private final NPCConfiguration parameters;
     private final DialogueController dialogueController;
+    private NPCController controller;
     @Getter
     private final String name;
 
@@ -99,7 +103,7 @@ public abstract class HypixelNPC {
                     if (!config.visible(player)) return;
 
                     String[] holograms = config.holograms(player);
-                    Pos position = config.position(player);
+                    Pos position = npc.currentPosition(player);
 
                     String username = holograms[holograms.length - 1];
                     boolean overflowing = username.length() > 16;
@@ -110,6 +114,7 @@ public abstract class HypixelNPC {
                     Entity entity;
                     switch (config) {
                         case HumanConfiguration humanConfig -> entity = new NPCEntityImpl(
+                            npc,
                             player,
                             position,
                             username,
@@ -119,11 +124,11 @@ public abstract class HypixelNPC {
                             humanConfig,
                             overflowing);
                         case VillagerConfiguration villagerConfig -> {
-                            entity = new NPCVillagerEntityImpl(player,
+                            entity = new NPCVillagerEntityImpl(npc, player,
                                 position, username, villagerConfig.profession(), villagerConfig, holograms, overflowing);
                         }
                         case AnimalConfiguration animalConfig -> {
-                            entity = new NPCAnimalEntityImpl(player,
+                            entity = new NPCAnimalEntityImpl(npc, player,
                                 position,
                                 username,
                                 animalConfig.entityType(), animalConfig, holograms, overflowing);
@@ -151,11 +156,15 @@ public abstract class HypixelNPC {
                     Logger.error("Entity for NPC {} does not implement NPCViewable, skipping update", npc.getName());
                     return;
                 }
-                npcViewable.updateNPC();
+                NPCControllerSnapshot snapshot = npc.runtimeSnapshot();
+                npcViewable.syncPresentation();
+                npcViewable.syncRuntime(snapshot);
+                npcPosition = npc.currentPosition(player);
 
                 Pos playerPosition = player.getPosition();
                 double entityDistance = playerPosition.distance(npcPosition);
-                boolean isLookingNPC = config.looking(player) && player.getGameMode() != GameMode.SPECTATOR;
+                boolean isLookingNPC = config.looking(player) && player.getGameMode() != GameMode.SPECTATOR
+                        && (snapshot == null || !snapshot.headLocked());
 
                 // Get inRangeOf list based on entity type
                 List<HypixelPlayer> inRange = npcViewable.getInRangeOf();
@@ -170,14 +179,14 @@ public abstract class HypixelNPC {
                             entity.lookAt(player);
                         } else {
                             // over the distance, reset back to default rotation
-                            entity.setView(npcPosition.yaw(), npcPosition.pitch());
+                            entity.setView(npcPosition.yaw() + (snapshot == null ? 0 : snapshot.headYawOffset()), npcPosition.pitch());
                         }
                     }
                 } else {
                     if (inRange.contains(player)) {
                         inRange.remove(player);
                         entity.updateOldViewer(player);
-                        entity.setView(npcPosition.yaw(), npcPosition.pitch());
+                        entity.setView(npcPosition.yaw() + (snapshot == null ? 0 : snapshot.headYawOffset()), npcPosition.pitch());
                     }
                 }
             });
@@ -188,10 +197,14 @@ public abstract class HypixelNPC {
 
     public void register() {
         registeredNPCs.add(this);
+        controller().register();
     }
 
     public void unregister() {
         registeredNPCs.remove(this);
+        if (controller != null) {
+            controller.unregister();
+        }
     }
 
     public void sendNPCMessage(HypixelPlayer player, String message) {
@@ -205,6 +218,26 @@ public abstract class HypixelNPC {
 
     protected DialogueController dialogue() {
         return dialogueController;
+    }
+
+    public NPCController controller() {
+        if (controller == null) {
+            controller = new NPCController(this, parameters, behavior());
+        }
+        return controller;
+    }
+
+    public NPCControllerSnapshot runtimeSnapshot() {
+        return parameters.supportsRuntimeBehavior() ? controller().snapshot() : null;
+    }
+
+    public Pos currentPosition(HypixelPlayer player) {
+        NPCControllerSnapshot snapshot = runtimeSnapshot();
+        return snapshot != null ? snapshot.renderedPosition() : parameters.position(player);
+    }
+
+    protected NPCBehaviorSpec behavior() {
+        return NPCBehaviorSpec.none();
     }
 
     /**

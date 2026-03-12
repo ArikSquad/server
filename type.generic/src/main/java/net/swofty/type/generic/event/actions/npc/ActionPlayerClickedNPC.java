@@ -4,9 +4,7 @@ import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.PlayerHand;
 import net.minestom.server.event.player.PlayerEntityInteractEvent;
 import net.swofty.type.generic.entity.npc.HypixelNPC;
-import net.swofty.type.generic.entity.npc.impl.NPCAnimalEntityImpl;
-import net.swofty.type.generic.entity.npc.impl.NPCEntityImpl;
-import net.swofty.type.generic.entity.npc.impl.NPCVillagerEntityImpl;
+import net.swofty.type.generic.entity.npc.impl.NPCViewable;
 import net.swofty.type.generic.event.EventNodes;
 import net.swofty.type.generic.event.HypixelEvent;
 import net.swofty.type.generic.event.HypixelEventClass;
@@ -31,12 +29,11 @@ public class ActionPlayerClickedNPC implements HypixelEventClass {
 		HypixelEventHandler.callCustomEvent(clickEvent);
 		if (clickEvent.isCancelled()) return;
 
-		switch (entity) {
-			case NPCEntityImpl _, NPCVillagerEntityImpl _, NPCAnimalEntityImpl _ -> npc.onClick(clickEvent);
-			default -> {
-				// This is not a NPC we can handle here
-				Logger.warn("Player " + player.getUsername() + " clicked on an unknown NPC type: " + entity.getClass().getName());
-			}
+		if (entity instanceof NPCViewable) {
+			npc.onClick(clickEvent);
+			return;
 		}
+
+		Logger.warn("Player " + player.getUsername() + " clicked on an unknown NPC type: " + entity.getClass().getName());
 	}
 }

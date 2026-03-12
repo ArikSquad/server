@@ -36,7 +36,7 @@ public class TeleportToNPCCommand extends HypixelCommand {
                 player.sendMessage("§cNo NPC found with the name '" + npcName + "'.");
                 return;
             }
-            player.teleport(npc.getParameters().position((HypixelPlayer) player));
+            player.teleport(npc.currentPosition((HypixelPlayer) player));
         }, npcArgument);
     }
 }

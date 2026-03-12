@@ -4,14 +4,14 @@ import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.Player;
 import net.swofty.type.generic.data.datapoints.DatapointToggles;
 import net.swofty.type.generic.entity.hologram.HologramEntity;
-import net.swofty.type.generic.entity.npc.impl.NPCEntityImpl;
+import net.swofty.type.generic.entity.npc.impl.NPCViewable;
 import net.swofty.type.generic.user.HypixelPlayer;
 
 public class PlayerVisibilityManager {
 
     public static void setupViewerRule(HypixelPlayer player, boolean showPlayers) {
         player.updateViewerRule((entity) -> {
-            if (entity instanceof NPCEntityImpl) return true;
+            if (entity instanceof NPCViewable) return true;
             if (entity instanceof HologramEntity) return true;
             if (entity.getEntityType() == EntityType.ITEM_FRAME) return true;
             return (entity instanceof Player) == showPlayers;

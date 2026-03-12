@@ -4,6 +4,7 @@ import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.EntityPose;
 import net.minestom.server.instance.Instance;
 import net.swofty.type.generic.HypixelConst;
+import net.swofty.type.generic.entity.npc.runtime.NPCLoadout;
 import net.swofty.type.generic.user.HypixelPlayer;
 import org.jetbrains.annotations.Nullable;
 
@@ -36,5 +37,17 @@ public interface NPCConfiguration {
 
     default boolean shouldDisplayHolograms(HypixelPlayer player) {
         return true;
+    }
+
+    default NPCLoadout loadout(HypixelPlayer player) {
+        return NPCLoadout.EMPTY;
+    }
+
+    default boolean supportsRuntimeBehavior() {
+        return false;
+    }
+
+    default Pos runtimeSpawnPosition() {
+        return Pos.ZERO;
     }
 }
