@@ -1,14 +1,18 @@
 package net.swofty.anticheat.loader.minestom;
 
 import net.minestom.server.MinecraftServer;
+import net.minestom.server.coordinate.Point;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.GlobalEventHandler;
+import net.minestom.server.event.entity.EntityTeleportEvent;
 import net.minestom.server.event.player.PlayerPacketEvent;
 import net.minestom.server.event.player.PlayerPacketOutEvent;
 import net.minestom.server.network.packet.client.ClientPacket;
 import net.minestom.server.network.packet.client.common.ClientPongPacket;
 import net.minestom.server.network.packet.server.SendablePacket;
 import net.minestom.server.network.packet.server.ServerPacket;
+import net.minestom.server.network.packet.server.play.PlayerPositionAndLookPacket;
+import net.swofty.anticheat.engine.SwoftyPlayer;
 import net.swofty.anticheat.event.SwoftyEventHandler;
 import net.swofty.anticheat.event.events.AnticheatPacketEvent;
 import net.swofty.anticheat.event.packet.*;
@@ -16,6 +20,7 @@ import net.swofty.anticheat.loader.Loader;
 import net.swofty.anticheat.loader.LoaderPacketHandler;
 import net.swofty.anticheat.loader.managers.SwoftySchedulerManager;
 import net.swofty.anticheat.loader.minestom.packets.*;
+import net.swofty.anticheat.math.Pos;
 import org.tinylog.Logger;
 
 import java.util.ArrayList;
@@ -68,8 +73,43 @@ public class MinestomLoader extends Loader {
         registerPacketHandler(SteerVehiclePacket.class,
                 new MinestomHandlerSteerVehiclePacket());
 
+        globalEventHandler.addListener(EntityTeleportEvent.class, event -> {
+            if (!(event.getEntity() instanceof Player player)) {
+                return;
+            }
+
+            SwoftyPlayer swoftyPlayer = SwoftyPlayer.players.get(player.getUuid());
+            if (swoftyPlayer == null) {
+                return;
+            }
+
+            net.minestom.server.coordinate.Pos newPosition = event.getNewPosition();
+            swoftyPlayer.handleServerTeleport(new Pos(
+                newPosition.x(),
+                newPosition.y(),
+                newPosition.z(),
+                newPosition.yaw(),
+                newPosition.pitch()
+            ));
+        });
+
         globalEventHandler.addListener(PlayerPacketOutEvent.class, (event) -> {
             ServerPacket packet = event.getPacket();
+
+            if (packet instanceof PlayerPositionAndLookPacket positionPacket) {
+                SwoftyPlayer swoftyPlayer = SwoftyPlayer.players.get(event.getPlayer().getUuid());
+                if (swoftyPlayer != null) {
+                    Point position = positionPacket.position();
+                    swoftyPlayer.handleServerTeleport(new Pos(
+                        position.x(),
+                        position.y(),
+                        position.z(),
+                        positionPacket.yaw(),
+                        positionPacket.pitch()
+                    ));
+                }
+            }
+
             LoaderPacketHandler handler = getPacketHandler(packet.getClass());
             if (handler == null) return;
 

@@ -16,6 +16,10 @@ public class PhaseFlag extends Flag {
 
     @ListenerMethod
     public void onPlayerPositionUpdate(PlayerPositionUpdateEvent event) {
+        if (event.getPlayer().hasMovementGrace()) {
+            return;
+        }
+
         Pos currentPos = event.getCurrentTick().getPos();
         PlayerWorld world = event.getPlayer().getWorld();
 

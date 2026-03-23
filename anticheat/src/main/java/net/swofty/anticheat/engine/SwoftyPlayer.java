@@ -14,12 +14,19 @@ import net.swofty.anticheat.math.Vel;
 import net.swofty.anticheat.world.PlayerWorld;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
 
 @Getter
 public class SwoftyPlayer {
+    private static final int DEFAULT_MOVEMENT_GRACE_TICKS = 8;
+
     public static final Map<UUID, SwoftyPlayer> players = new ConcurrentHashMap<>();
     private final UUID uuid;
 
@@ -36,6 +43,7 @@ public class SwoftyPlayer {
     private boolean flying = false;
     private boolean allowFlight = false;
     private boolean creativeMode = false;
+    private int movementGraceTicks = 0;
 
     public SwoftyPlayer(UUID uuid) {
         this.uuid = uuid;
@@ -51,6 +59,9 @@ public class SwoftyPlayer {
 
     public void moveTickOn() {
         if (currentTick == null) return;
+        if (movementGraceTicks > 0) {
+            movementGraceTicks--;
+        }
 
         Pos currentPos = currentTick.getPos();
         Pos lastPos = !lastTicks.isEmpty() ? lastTicks.getLast().getPos() : currentPos;
@@ -142,6 +153,20 @@ public class SwoftyPlayer {
                 currentTick.getVel(),
                 onGround
         );
+    }
+
+    public void handleServerTeleport(@NotNull Pos teleportPosition) {
+        lastTicks.clear();
+        currentTick = new PlayerTickInformation(teleportPosition, new Vel(0, 0, 0), true);
+        grantMovementGraceTicks(DEFAULT_MOVEMENT_GRACE_TICKS);
+    }
+
+    public void grantMovementGraceTicks(int ticks) {
+        movementGraceTicks = Math.max(movementGraceTicks, ticks);
+    }
+
+    public boolean hasMovementGrace() {
+        return movementGraceTicks > 0;
     }
 
     public void sendPacket(SwoftyPacket packet) {
