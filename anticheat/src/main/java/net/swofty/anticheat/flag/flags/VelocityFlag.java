@@ -12,30 +12,27 @@ import java.util.Map;
 import java.util.UUID;
 
 public class VelocityFlag extends Flag {
-    // Track expected velocity after knockback per player
+    private static final int MAX_CHECK_TICKS = 4;
+    private static final int MIN_TICKS_BEFORE_EVALUATION = 2;
+    private static final double MIN_EXPECTED_HORIZONTAL = 0.05;
+    private static final double REQUIRED_HORIZONTAL_RATIO = 0.55;
+    private static final double REQUIRED_VERTICAL_RATIO = 0.5;
+
     private static final Map<UUID, KnockbackData> expectedKnockback = new HashMap<>();
 
     private static class KnockbackData {
-        Vel expectedVelocity;
-        long timestamp;
-        int ticksToCheck;
+        private final Vel expectedVelocity;
+        private int ticksObserved;
 
-        KnockbackData(Vel velocity, long timestamp, int ticks) {
+        KnockbackData(Vel velocity) {
             this.expectedVelocity = velocity;
-            this.timestamp = timestamp;
-            this.ticksToCheck = ticks;
         }
     }
 
     @ListenerMethod
     public void onPlayerKnockback(PlayerKnockbackEvent event) {
-        // Store expected knockback velocity
         UUID uuid = event.getPlayer().getUuid();
-        expectedKnockback.put(uuid, new KnockbackData(
-            event.getKnockbackVelocity(),
-            System.currentTimeMillis(),
-            3 // Check for 3 ticks
-        ));
+        expectedKnockback.put(uuid, new KnockbackData(event.getKnockbackVelocity()));
     }
 
     @ListenerMethod
@@ -49,9 +46,16 @@ public class VelocityFlag extends Flag {
 
         KnockbackData data = expectedKnockback.get(uuid);
 
-        // Check if we should still be checking
-        data.ticksToCheck--;
-        if (data.ticksToCheck <= 0) {
+        if (player.shouldBypassMovementChecks()) {
+            expectedKnockback.remove(uuid);
+            return;
+        }
+
+        data.ticksObserved++;
+        if (data.ticksObserved < MIN_TICKS_BEFORE_EVALUATION) {
+            return;
+        }
+        if (data.ticksObserved > MAX_CHECK_TICKS) {
             expectedKnockback.remove(uuid);
             return;
         }
@@ -59,35 +63,26 @@ public class VelocityFlag extends Flag {
         Vel actualVelocity = event.getCurrentTick().getVel();
         Vel expectedVel = data.expectedVelocity;
 
-        // Calculate how much of the knockback was taken
-        double expectedHorizontal = Math.sqrt(
-            expectedVel.x() * expectedVel.x() + expectedVel.z() * expectedVel.z()
-        );
-        double actualHorizontal = Math.sqrt(
-            actualVelocity.x() * actualVelocity.x() + actualVelocity.z() * actualVelocity.z()
-        );
+        double expectedHorizontal = Math.hypot(expectedVel.x(), expectedVel.z());
+        double actualHorizontal = Math.hypot(actualVelocity.x(), actualVelocity.z());
 
-        // Player should have at least 70% of expected knockback
-        double velocityRatio = actualHorizontal / expectedHorizontal;
+        if (expectedHorizontal >= MIN_EXPECTED_HORIZONTAL) {
+            double velocityRatio = actualHorizontal / expectedHorizontal;
 
-        if (velocityRatio < 0.7) {
-            // Player is taking less knockback than expected
-            double reduction = 1.0 - velocityRatio;
+            if (velocityRatio < REQUIRED_HORIZONTAL_RATIO) {
+                double reduction = 1.0 - velocityRatio;
+                double certainty = Math.min(0.95, 0.45 + reduction * 0.6);
 
-            // 30% reduction = 60%, 70%+ reduction = 95%
-            double certainty = Math.min(0.95, 0.4 + reduction * 0.8);
-
-            player.flag(net.swofty.anticheat.flag.FlagType.VELOCITY, certainty);
-
-            // Remove after flagging
-            expectedKnockback.remove(uuid);
+                player.flag(net.swofty.anticheat.flag.FlagType.VELOCITY, certainty);
+                expectedKnockback.remove(uuid);
+                return;
+            }
         }
 
-        // Check vertical knockback too
         if (Math.abs(expectedVel.y()) > 0.1) {
             double verticalRatio = actualVelocity.y() / expectedVel.y();
 
-            if (verticalRatio < 0.5) {
+            if (verticalRatio < REQUIRED_VERTICAL_RATIO) {
                 double certainty = Math.min(0.9, 0.5 + (1.0 - verticalRatio) * 0.5);
                 player.flag(net.swofty.anticheat.flag.FlagType.VELOCITY, certainty);
                 expectedKnockback.remove(uuid);

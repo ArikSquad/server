@@ -8,9 +8,13 @@ import java.util.Map;
 import java.util.UUID;
 
 public class FlagManager {
+    private static final double MIN_CERTAINTY = 0.0;
+    private static final double MAX_CERTAINTY = 1.0;
+    private static final double PUNISHMENT_THRESHOLD = 0.9;
+    private static final long FLAG_EXPIRATION_TIME = 1000;
+
     private final UUID uuid;
     private final Map<FlagType, List<Flag>> flags;
-    private static final long FLAG_EXPIRATION_TIME = 1000; // 1 second
 
     public FlagManager(UUID uuid, Map<FlagType, List<Flag>> flags) {
         this.uuid = uuid;
@@ -19,9 +23,9 @@ public class FlagManager {
 
     public void addFlag(FlagType flagType, double certainty) {
         Flag flag = flagType.getFlagSupplier().get();
-        flag.setCertainty(certainty);
+        flag.setCertainty(clampCertainty(certainty));
 
-        flags.computeIfAbsent(flagType, k -> new ArrayList<>()).add(flag);
+        flags.computeIfAbsent(flagType, _ -> new ArrayList<>()).add(flag);
         calculateOverallCertainty(flagType);
     }
 
@@ -40,8 +44,16 @@ public class FlagManager {
                 .reduce(1, (a, b) -> a * (1 - b));
         overallCertainty = 1 - overallCertainty;
 
-        if (overallCertainty > 0.9) {
+        if (overallCertainty > PUNISHMENT_THRESHOLD) {
             SwoftyAnticheat.getPunishmentHandler().onFlag(uuid, flagType);
         }
+    }
+
+    private double clampCertainty(double certainty) {
+        if (Double.isNaN(certainty) || Double.isInfinite(certainty)) {
+            return MIN_CERTAINTY;
+        }
+
+        return Math.max(MIN_CERTAINTY, Math.min(MAX_CERTAINTY, certainty));
     }
 }

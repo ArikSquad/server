@@ -31,7 +31,6 @@ slf4j = "2.0.17"
 snakeyaml = "2.5"
 spark-common = "1.10.158-20260110.094844-1"
 spark-core = "2.9.4"
-spigot-api = "1.21-R0.1-SNAPSHOT"
 tinylog = "2.7.0"
 velocity-api = "3.5.0-SNAPSHOT"
 viabackwards = "5.7.2"
@@ -85,7 +84,6 @@ slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
 spark-common = { module = "me.lucko:spark-common", version.ref = "spark-common" }
 spark-core = { module = "com.sparkjava:spark-core", version.ref = "spark-core" }
-spigot-api = { module = "org.spigotmc:spigot-api", version.ref = "spigot-api" }
 tinylog-api = { module = "org.tinylog:tinylog-api", version.ref = "tinylog" }
 tinylog-impl = { module = "org.tinylog:tinylog-impl", version.ref = "tinylog" }
 velocity-api = { module = "com.velocitypowered:velocity-api", version.ref = "velocity-api" }

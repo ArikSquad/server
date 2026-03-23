@@ -9,6 +9,9 @@ import net.swofty.anticheat.world.Block;
 import net.swofty.anticheat.world.PlayerWorld;
 
 public class JesusFlag extends Flag {
+    private static final double MIN_WATER_WALK_SPEED = 0.15;
+    private static final double MAX_WATER_SURFACE_DRIFT = 0.005;
+    private static final double MAX_WATER_SWIM_SPEED = 0.2;
 
     @ListenerMethod
     public void onPlayerPositionUpdate(PlayerPositionUpdateEvent event) {
@@ -38,15 +41,12 @@ public class JesusFlag extends Flag {
                 // Player is "on ground" but ground is liquid = Jesus/WaterWalk
 
                 // Check if they're actually moving on it
-                double horizontalSpeed = Math.sqrt(vel.x() * vel.x() + vel.z() * vel.z());
+                double horizontalSpeed = horizontalSpeed(vel);
 
-                if (horizontalSpeed > 0.05) {
+                if (horizontalSpeed > MIN_WATER_WALK_SPEED) {
                     // Walking on water
                     double certainty = Math.min(0.95, 0.7 + horizontalSpeed * 2);
                     event.getPlayer().flag(net.swofty.anticheat.flag.FlagType.JESUS, certainty);
-                } else {
-                    // Standing on water (could be edge case)
-                    event.getPlayer().flag(net.swofty.anticheat.flag.FlagType.JESUS, 0.6);
                 }
             }
         });
@@ -70,7 +70,7 @@ public class JesusFlag extends Flag {
 
                     // In water, player should be sinking or swimming (Y should change)
                     // If Y is constant or increasing without swimming motion, it's Jesus
-                    if (Math.abs(yChange) < 0.01) {
+                    if (Math.abs(yChange) < MAX_WATER_SURFACE_DRIFT && horizontalSpeed(vel) > 0.08) {
                         // Not sinking or moving vertically = floating
                         event.getPlayer().flag(net.swofty.anticheat.flag.FlagType.JESUS, 0.75);
                     } else if (yChange > 0 && Math.abs(vel.y()) < 0.05) {
@@ -80,12 +80,12 @@ public class JesusFlag extends Flag {
                 }
 
                 // Additional check: Moving too fast in water
-                double horizontalSpeed = Math.sqrt(vel.x() * vel.x() + vel.z() * vel.z());
+                double horizontalSpeed = horizontalSpeed(vel);
 
                 // Normal swim speed is ~0.08 blocks/tick
-                // Anything over 0.15 in water is suspicious
-                if (horizontalSpeed > 0.15) {
-                    double certainty = Math.min(0.9, 0.6 + (horizontalSpeed - 0.15) * 3);
+                // Anything materially above that without vertical movement is suspicious
+                if (horizontalSpeed > MAX_WATER_SWIM_SPEED && Math.abs(vel.y()) < 0.03) {
+                    double certainty = Math.min(0.9, 0.6 + (horizontalSpeed - MAX_WATER_SWIM_SPEED) * 3);
                     event.getPlayer().flag(net.swofty.anticheat.flag.FlagType.JESUS, certainty);
                 }
             }
@@ -93,9 +93,10 @@ public class JesusFlag extends Flag {
     }
 
     private boolean isLiquid(Block block) {
-        // Check if block is water or lava
-        // This would need to be implemented based on actual Block class
-        // For now, we'll assume a method exists or should be added
-        return block != null; // Placeholder - should check block type
+        return block != null && (block.isWater() || block.isLava());
+    }
+
+    private double horizontalSpeed(Vel vel) {
+        return Math.hypot(vel.x(), vel.z());
     }
 }

@@ -1,24 +1,49 @@
 package net.swofty.anticheat.flag.flags;
 
-import net.swofty.anticheat.engine.PlayerTickInformation;
 import net.swofty.anticheat.engine.SwoftyPlayer;
 import net.swofty.anticheat.event.ListenerMethod;
 import net.swofty.anticheat.event.events.PlayerPositionUpdateEvent;
 import net.swofty.anticheat.flag.Flag;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 public class TimerFlag extends Flag {
-    // Track last packet times per player
-    private static final Map<UUID, Long> lastPacketTimes = new HashMap<>();
-    private static final Map<UUID, Integer> packetCounts = new HashMap<>();
-
-    // Normal tick length is 50ms
+    private static final Map<UUID, SampleWindow> sampleWindows = new HashMap<>();
     private static final long EXPECTED_TICK_MS = 50;
-    private static final double MIN_TICK_RATIO = 0.7; // 70% of normal speed (35ms) is suspicious
-    private static final int SAMPLE_SIZE = 20; // Check over 20 ticks
+    private static final long MIN_SUSPICIOUS_TICK_MS = 35;
+    private static final int SAMPLE_SIZE = 20;
+    private static final int MIN_SUSPICIOUS_SAMPLES = 16;
+
+    private static final class SampleWindow {
+        private final Deque<Long> packetIntervals = new ArrayDeque<>();
+        private long lastPacketTime = -1L;
+
+        void record(long now) {
+            if (lastPacketTime != -1L) {
+                packetIntervals.addLast(now - lastPacketTime);
+                if (packetIntervals.size() > SAMPLE_SIZE) {
+                    packetIntervals.removeFirst();
+                }
+            }
+            lastPacketTime = now;
+        }
+
+        boolean isFull() {
+            return packetIntervals.size() == SAMPLE_SIZE;
+        }
+
+        double averageInterval() {
+            return packetIntervals.stream().mapToLong(Long::longValue).average().orElse(EXPECTED_TICK_MS);
+        }
+
+        long suspiciousSampleCount() {
+            return packetIntervals.stream().filter(interval -> interval <= MIN_SUSPICIOUS_TICK_MS).count();
+        }
+    }
 
     @ListenerMethod
     public void onPlayerPositionUpdate(PlayerPositionUpdateEvent event) {
@@ -26,47 +51,25 @@ public class TimerFlag extends Flag {
         UUID uuid = player.getUuid();
         long currentTime = System.currentTimeMillis();
 
-        if (!lastPacketTimes.containsKey(uuid)) {
-            lastPacketTimes.put(uuid, currentTime);
-            packetCounts.put(uuid, 0);
+        if (player.shouldBypassMovementChecks()) {
             return;
         }
 
-        long lastTime = lastPacketTimes.get(uuid);
-        long timeDiff = currentTime - lastTime;
+        SampleWindow window = sampleWindows.computeIfAbsent(uuid, ignored -> new SampleWindow());
+        window.record(currentTime);
 
-        // Update tracking
-        lastPacketTimes.put(uuid, currentTime);
-        int count = packetCounts.getOrDefault(uuid, 0) + 1;
-        packetCounts.put(uuid, count);
-
-        // Only check after we have enough samples
-        if (count < SAMPLE_SIZE) {
+        if (!window.isFull()) {
             return;
         }
 
-        // Calculate average tick time over recent samples
-        java.util.List<PlayerTickInformation> ticks = player.getLastTicks();
-        if (ticks.size() < 5) return;
-
-        // Check if packets are coming too fast
-        double tickRatio = (double) timeDiff / EXPECTED_TICK_MS;
-
-        if (tickRatio < MIN_TICK_RATIO) {
-            // Player is sending packets faster than normal game speed
-            // This indicates timer/game speed manipulation
-            double speedMultiplier = MIN_TICK_RATIO / tickRatio;
-
-            // Higher speed = higher certainty
-            // 1.5x speed = 70%, 2x speed = 85%, 3x+ = 95%
-            double certainty = Math.min(0.95, 0.5 + (speedMultiplier - 1.0) * 0.3);
-
-            player.flag(net.swofty.anticheat.flag.FlagType.TIMER, certainty);
+        double averageInterval = window.averageInterval();
+        long suspiciousSamples = window.suspiciousSampleCount();
+        if (averageInterval >= MIN_SUSPICIOUS_TICK_MS || suspiciousSamples < MIN_SUSPICIOUS_SAMPLES) {
+            return;
         }
 
-        // Reset counter periodically
-        if (count >= SAMPLE_SIZE * 2) {
-            packetCounts.put(uuid, 0);
-        }
+        double speedMultiplier = EXPECTED_TICK_MS / averageInterval;
+        double certainty = Math.min(0.95, 0.55 + (speedMultiplier - 1.0) * 0.2);
+        player.flag(net.swofty.anticheat.flag.FlagType.TIMER, certainty);
     }
 }

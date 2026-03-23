@@ -11,6 +11,8 @@ import net.swofty.anticheat.world.PlayerWorld;
 import java.util.concurrent.CompletableFuture;
 
 public class PhaseFlag extends Flag {
+    private static final double MIN_PHASE_SPEED = 0.08;
+    private static final double MIN_WALL_CLIP_DISTANCE = 0.2;
 
     @ListenerMethod
     public void onPlayerPositionUpdate(PlayerPositionUpdateEvent event) {
@@ -46,15 +48,12 @@ public class PhaseFlag extends Flag {
 
                     // Check if player is moving through the block
                     Vel vel = event.getCurrentTick().getVel();
-                    double speed = Math.sqrt(vel.x() * vel.x() + vel.z() * vel.z());
+                    double speed = Math.hypot(vel.x(), vel.z());
 
-                    if (speed > 0.05) {
+                    if (speed > MIN_PHASE_SPEED) {
                         // Moving through solid block = phasing
                         double certainty = Math.min(0.95, 0.7 + speed * 0.5);
                         event.getPlayer().flag(net.swofty.anticheat.flag.FlagType.PHASE, certainty);
-                    } else {
-                        // Stationary in block could be glitch, lower certainty
-                        event.getPlayer().flag(net.swofty.anticheat.flag.FlagType.PHASE, 0.5);
                     }
                 }
 
@@ -78,7 +77,7 @@ public class PhaseFlag extends Flag {
 
         double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-        if (distance < 0.1) return; // Too small to check
+        if (distance < MIN_WALL_CLIP_DISTANCE) return;
 
         // Check midpoint for solid blocks
         double midX = (from.x() + to.x()) / 2;
@@ -98,9 +97,6 @@ public class PhaseFlag extends Flag {
     }
 
     private boolean isSolid(Block block) {
-        // Check if block is solid (not air, not liquid, etc.)
-        // This would need to be expanded based on actual Block implementation
-        // For now, assume any non-null block is solid
-        return block != null;
+        return block != null && !block.isWater() && !block.isLava() && block.boundingBox() != null;
     }
 }

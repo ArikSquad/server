@@ -10,10 +10,6 @@ repositories {
     mavenCentral()
 
     maven {
-        url = uri("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
-    }
-
-    maven {
         url = uri("https://repo.papermc.io/repository/maven-public/")
     }
 
@@ -33,8 +29,6 @@ dependencies {
     }
     implementation(libs.tinylog.api)
     implementation(libs.tinylog.impl)
-
-    compileOnly(libs.spigot.api)
 
     compileOnly(libs.protocollib)
 }

@@ -2,11 +2,18 @@ package net.swofty.anticheat.world;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class PlayerWorld {
     private static final int CHUNK_SIZE = 16;
+    private static final int MIN_WORLD_Y = -64;
+    private static final int MAX_WORLD_Y = 320;
+
     private final Map<ChunkCoordinate, Chunk> chunks;
 
     private final ExecutorService executorService;
@@ -35,11 +42,18 @@ public class PlayerWorld {
 
     public CompletableFuture<Void> updateBlock(int x, int y, int z, Block block) {
         return CompletableFuture.runAsync(() -> {
+            if (isInvalidY(y)) {
+                return;
+            }
+
             lock.lock();
             try {
-                ChunkCoordinate chunkCoord = new ChunkCoordinate(x / CHUNK_SIZE, z / CHUNK_SIZE);
-                Chunk chunk = chunks.computeIfAbsent(chunkCoord, k -> new Chunk());
-                chunk.setBlock(x % CHUNK_SIZE, y, z % CHUNK_SIZE, block);
+                ChunkCoordinate chunkCoord = new ChunkCoordinate(
+                    Math.floorDiv(x, CHUNK_SIZE),
+                    Math.floorDiv(z, CHUNK_SIZE)
+                );
+                Chunk chunk = chunks.computeIfAbsent(chunkCoord, _ -> new Chunk());
+                chunk.setBlock(Math.floorMod(x, CHUNK_SIZE), y, Math.floorMod(z, CHUNK_SIZE), block);
             } finally {
                 lock.unlock();
             }
@@ -48,14 +62,21 @@ public class PlayerWorld {
 
     public CompletableFuture<Block> getBlock(int x, int y, int z) {
         return CompletableFuture.supplyAsync(() -> {
+            if (isInvalidY(y)) {
+                return null;
+            }
+
             lock.lock();
             try {
-                ChunkCoordinate chunkCoord = new ChunkCoordinate(x / CHUNK_SIZE, z / CHUNK_SIZE);
+                ChunkCoordinate chunkCoord = new ChunkCoordinate(
+                    Math.floorDiv(x, CHUNK_SIZE),
+                    Math.floorDiv(z, CHUNK_SIZE)
+                );
                 Chunk chunk = chunks.get(chunkCoord);
                 if (chunk == null) {
                     return null;
                 }
-                return chunk.getBlock(x % CHUNK_SIZE, y, z % CHUNK_SIZE);
+                return chunk.getBlock(Math.floorMod(x, CHUNK_SIZE), y, Math.floorMod(z, CHUNK_SIZE));
             } finally {
                 lock.unlock();
             }
@@ -64,6 +85,10 @@ public class PlayerWorld {
 
     public void shutdown() {
         executorService.shutdown();
+    }
+
+    private boolean isInvalidY(int y) {
+        return y < MIN_WORLD_Y || y > MAX_WORLD_Y;
     }
 
     private static class ChunkCoordinate {
@@ -90,7 +115,7 @@ public class PlayerWorld {
     }
 
     private static class Chunk {
-        private Block[][][] blocks;
+        private final Block[][][] blocks;
 
         public Chunk() {
             this.blocks = new Block[CHUNK_SIZE][256][CHUNK_SIZE];

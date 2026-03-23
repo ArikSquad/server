@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.UUID;
 
 public class SwoftyEngine {
+    private static final double DEFINITIVE_FLAG_CERTAINTY = 1.0;
+
     public static void startSchedulers(Loader loader) {
         SwoftySchedulerManager scheduler = loader.getSchedulerManager();
         scheduler.scheduleRepeatingTask(() -> {
@@ -43,23 +45,19 @@ public class SwoftyEngine {
                 player.moveTickOn();
                 player.sendPingRequest();
                 if (player.ticksSinceLastPingResponse() > SwoftyAnticheat.getValues().getTicksAllowedToMissPing()) {
-                    player.flag(FlagType.TIMEOUT_PING_PACKETS, 100);
+                    player.flag(FlagType.TIMEOUT_PING_PACKETS, DEFINITIVE_FLAG_CERTAINTY);
                 }
             }));
         }, 1, 1);
 
         // Cleanup expired bypasses every 5 seconds (100 ticks)
-        scheduler.scheduleRepeatingTask(() -> {
-            AnticheatAPI.getBypassManager().cleanupExpired();
-        }, 100, 100);
+        scheduler.scheduleRepeatingTask(() -> AnticheatAPI.getBypassManager().cleanupExpired(), 100, 100);
     }
 
     public static void registerEvents() {
         SwoftyEventHandler.registerEventMethods(new MovementEvents());
         SwoftyEventHandler.registerEventMethods(new PingEvents());
 
-        Arrays.stream(FlagType.values()).forEach(flagType -> {
-            SwoftyEventHandler.registerEventMethods(flagType.getFlagSupplier().get());
-        });
+        Arrays.stream(FlagType.values()).forEach(flagType -> SwoftyEventHandler.registerEventMethods(flagType.getFlagSupplier().get()));
     }
 }
