@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	defaultRepoURL    = "https://github.com/Swofty-Developments/HypixelSkyBlock.git"
+	defaultRepoURL    = "https://github.com/MikArt-Europe/HypixelSkyBlock.git"
 	defaultRepoBranch = "master"
 	bootstrapRepoDir  = "repo"
 )
