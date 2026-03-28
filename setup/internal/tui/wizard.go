@@ -30,11 +30,6 @@ func RunWizard(p profile.Profile) (string, profile.Profile, error) {
 
 	if err := huh.NewForm(
 		huh.NewGroup(
-			huh.NewNote().
-				Title("Hypixel Setup").
-				Description("This installer uses the Charmbracelet Bubble Tea stack for a persistent profile-driven setup flow. Docker Compose is the default for local installs; Kubernetes builds images locally on the target machine."),
-		),
-		huh.NewGroup(
 			huh.NewInput().Title("Install directory").Description("State, rendered assets, and local configuration live here.").Value(&p.InstallDir),
 			huh.NewSelect[string]().Title("Deployment runtime").Description("Choose Docker Compose or Kubernetes.").Options(
 				huh.NewOption("Docker Compose", profile.RuntimeCompose),
@@ -53,6 +48,11 @@ func RunWizard(p profile.Profile) (string, profile.Profile, error) {
 		),
 		huh.NewGroup(
 			huh.NewInput().Title("Image tag").Description("Applied to proxy, service, and game images.").Value(&p.ImageTag),
+			huh.NewSelect[string]().Title("Kubernetes target").Description("Choose standard Kubernetes or Minikube. Standard Kubernetes builds into containerd via nerdctl; Minikube is only for local test installations.").Options(
+				huh.NewOption("Official Kubernetes", profile.KubernetesTargetStandard),
+				huh.NewOption("Minikube (local testing only)", profile.KubernetesTargetMinikube),
+			).Value(&p.KubernetesTarget),
+			huh.NewInput().Title("Minikube profile").Description("Used for `minikube image load`.").Value(&p.MinikubeProfile),
 			huh.NewInput().Title("Kubernetes namespace").Description("Generated manifests target this namespace.").Value(&p.KubernetesNamespace),
 			huh.NewInput().Title("kubectl context").Description("Optional. Leave blank for the current context.").Value(&p.KubeContext),
 			huh.NewSelect[string]().Title("Proxy service type").Description("How the proxy is exposed to players.").Options(
@@ -125,6 +125,7 @@ func summary(p profile.Profile, skyblockSelected, minigameSelected []string) str
 	}
 	if p.Runtime == profile.RuntimeK8s {
 		lines = append(lines,
+			"Target: "+p.KubernetesTarget,
 			"Namespace: "+p.KubernetesNamespace,
 			"Local images: *:"+p.ImageTag,
 			"Proxy exposure: "+p.ProxyServiceType,
