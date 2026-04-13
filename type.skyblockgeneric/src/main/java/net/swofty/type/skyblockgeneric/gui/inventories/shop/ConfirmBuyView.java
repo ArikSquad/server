@@ -18,7 +18,6 @@ import net.swofty.type.skyblockgeneric.user.SkyBlockPlayer;
 
 import java.util.ArrayList;
 import java.util.Locale;
-import java.util.Map;
 
 public final class ConfirmBuyView implements View<ConfirmBuyView.State> {
 
@@ -34,10 +33,7 @@ public final class ConfirmBuyView implements View<ConfirmBuyView.State> {
         layout.slot(12,
                 (s, c) -> {
                     Locale l = c.player().getLocale();
-                    ArrayList<String> lore = new ArrayList<>(I18n.lore("gui_shop.confirm_buy.confirm_button.lore", l, Map.of(
-                            "item_name", state.item.getDisplayName(),
-                            "cost", StringUtility.commaify(state.price)
-                    )));
+                    ArrayList<String> lore = new ArrayList<>(I18n.lore("gui_shop.confirm_buy.confirm_button.lore", l, Component.text(state.item.getDisplayName()), Component.text(StringUtility.commaify(state.price))));
                     return ItemStackCreator.getStack(I18n.string("gui_shop.confirm_buy.confirm_button", l), Material.LIME_TERRACOTTA, 1, lore);
                 },
                 (click, c) -> {
@@ -48,10 +44,7 @@ public final class ConfirmBuyView implements View<ConfirmBuyView.State> {
                     if (player.getCoins() >= state.price) {
                         player.addAndUpdateItem(state.item);
                         player.removeCoins(state.price);
-                        player.sendMessage(I18n.string("gui_shop.confirm_buy.bought_message", l, Map.of(
-                                "item_name", state.item.getDisplayName(),
-                                "cost", String.valueOf(state.price)
-                        )));
+                        player.sendMessage(I18n.string("gui_shop.confirm_buy.bought_message", l, Component.text(state.item.getDisplayName()), Component.text(String.valueOf(state.price))));
                     } else {
                         player.sendMessage(I18n.string("gui_shop.confirm_buy.not_enough_coins", l));
                     }
@@ -60,7 +53,7 @@ public final class ConfirmBuyView implements View<ConfirmBuyView.State> {
         );
 
         layout.slot(16,
-                (s, c) -> TranslatableItemStackCreator.getStack(c.player(), "gui_shop.confirm_buy.cancel_button", Material.RED_TERRACOTTA, 1),
+            (s, c) -> TranslatableItemStackCreator.getStack("gui_shop.confirm_buy.cancel_button", Material.RED_TERRACOTTA, 1),
                 (_, c) -> c.player().closeInventory()
         );
     }
